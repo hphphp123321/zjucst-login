@@ -4,8 +4,8 @@ import android.content.Context
 
 object UserCredentials {
     private const val PREFS_NAME = "user_credentials"
-    private const val PREFS_KEY_USERNAME = "username"
-    private const val PREFS_KEY_PASSWORD = "password"
+    private const val PREFS_KEY_USERNAME = "user_username"
+    private const val PREFS_KEY_PASSWORD = "user_password"
 
     var username: String = ""
     var password: String = "zjusct"
