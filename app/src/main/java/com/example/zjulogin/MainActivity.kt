@@ -3,8 +3,6 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -35,6 +33,7 @@ class MainActivity : ComponentActivity() {
         loginViewModel = ViewModelProvider(this)[LoginViewModel::class.java]
         // Load saved credentials
         UserCredentials.loadCredentials(applicationContext)
+        loginViewModel.startLogin(applicationContext)
         loginViewModel.checkNetworkStatus(applicationContext)
         setContent {
             ZjuloginTheme {
@@ -43,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LoginScreen(loginViewModel, this)
+                    LoginScreen(loginViewModel, applicationContext)
                 }
             }
         }
@@ -58,17 +57,13 @@ fun LoginScreen(
     context: Context = LocalContext.current
 )
 {
-    val username = remember { mutableStateOf("") }
-    val password = remember { mutableStateOf("zjucst") }
 
     val onUsernameChanged: (String) -> Unit = { value ->
         UserCredentials.username = value
-        username.value = value
     }
 
     val onPasswordChanged: (String) -> Unit = { value ->
         UserCredentials.password = value
-        password.value = value
     }
 
     Column(
@@ -97,7 +92,7 @@ fun LoginScreen(
         // input text
         loginViewModel.isUsernamePasswordInputEnabled.value?.let { value ->
             OutlinedTextField(
-                value = username.value,
+                value = UserCredentials.username,
                 onValueChange = onUsernameChanged,
                 label = { Text("Username") },
                 modifier = Modifier
@@ -115,7 +110,7 @@ fun LoginScreen(
 
         loginViewModel.isUsernamePasswordInputEnabled.value?.let { value ->
             OutlinedTextField(
-                value = password.value,
+                value = UserCredentials.password,
                 onValueChange = onPasswordChanged,
                 label = { Text("Password") },
                 modifier = Modifier
@@ -134,9 +129,8 @@ fun LoginScreen(
         loginViewModel.isLoginButtonEnabled.value?.let { value ->
             Button(
                 onClick = {
-                    UserCredentials.username = username.value
-                    UserCredentials.password = password.value
                     loginViewModel.performLogin(context)
+                    UserCredentials.saveCredentials(context)
                 },
                 enabled = value,
                 shape = MaterialTheme.shapes.medium,
@@ -151,6 +145,7 @@ fun LoginScreen(
             Button(
                 onClick = {
                     loginViewModel.performLogout(context)
+                    UserCredentials.saveCredentials(context)
                 },
                 enabled = value,
                 shape = MaterialTheme.shapes.medium,

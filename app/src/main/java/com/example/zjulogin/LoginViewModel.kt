@@ -36,6 +36,14 @@ class LoginViewModel() : ViewModel() {
     val isLoginButtonEnabled = MutableLiveData(true)
     val isLogoutButtonEnabled = MutableLiveData(false)
 
+    fun startLogin(context: Context) {
+        viewModelScope.launch {
+            if (getWifiInfo(context) == WifiInfo.ConnectedCaptivePortalNotLoggedIn) {
+                performLogin(context)
+            }
+        }
+    }
+
     private suspend fun login(context: Context, network: Network): Boolean
     {
         if (UserCredentials.username.isEmpty()) {
@@ -98,17 +106,21 @@ class LoginViewModel() : ViewModel() {
                 return@launch
             }
             if (login(context, network)) {
+                val isConnected = canAccessUrl("https://www.baidu.com", network)
+                if (!isConnected) {
+                    Toast.makeText(context, "登录失败！", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.reportNetworkConnectivity(network, true)
                 Toast.makeText(context, "登录成功！", Toast.LENGTH_SHORT).show()
                 isUsernamePasswordInputEnabled.value = false
                 isLoginButtonEnabled.value = false
                 isLogoutButtonEnabled.value = true
 
-                // Save credentials after successful login
-                UserCredentials.saveCredentials(context)
             } else {
                 Toast.makeText(context, "登录失败！", Toast.LENGTH_SHORT).show()
             }
-
         }
     }
 
@@ -120,6 +132,13 @@ class LoginViewModel() : ViewModel() {
                 return@launch
             }
             if (logout(context, network)) {
+                val isConnected = canAccessUrl("https://www.baidu.com", network)
+                if (isConnected) {
+                    Toast.makeText(context, "登出失败！", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.reportNetworkConnectivity(network, false)
                 Toast.makeText(context, "登出成功！", Toast.LENGTH_SHORT).show()
                 isUsernamePasswordInputEnabled.value = true
                 isLoginButtonEnabled.value = true
